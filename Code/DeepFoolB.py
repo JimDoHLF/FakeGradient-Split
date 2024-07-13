@@ -35,12 +35,15 @@ def deepfoolB(image, net, num_classes=10, overshoot=0.02, max_iter=50):
         print("Using CPU")
 
 
-    f_image = net.forward(Variable(image[None, :, :, :], requires_grad=True)).data.cpu().numpy().flatten()
+    f_image = net.forward(Variable(image[None, :, :, :], requires_grad=True)).data.cpu()
+
+    f_image = f_image.numpy().flatten()
 
     I = (np.array(f_image)).flatten().argsort()[::-1]
 
     I = I[0:num_classes]
     label = I[0]
+
 
     input_shape = image.cpu().numpy().shape
     pert_image = copy.deepcopy(image)

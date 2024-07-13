@@ -5,20 +5,21 @@ import random as random
 # 1 key to encode, 1 key to decode
 # Highest hexadecimal value (3 numbers) is 4095. Use 4095 keys
 
-# Key file will store the structure of the key
-keyFile = open("key.txt", "w")
+def GenerateKey(size):
+    # Key file will store the structure of the key
+    keyFile = open("key.txt", "w")
 
-# Which position
-keyList = []
-for i in range (4095):
-    keyList.append(i)
+    # Which position
+    keyList = []
+    for i in range (size):
+        keyList.append(i)
 
-# Shuffle the keys
-random.shuffle(keyList)
+    # Shuffle the keys
+    random.shuffle(keyList)
 
-# Encode to hex and write
-for i in range (4095):
-    keyFile.write(hex(keyList[i])[2:].rjust(3, "0"))
+    # Encode to hex and write
+    for i in range (size):
+        keyFile.write(hex(keyList[i])[2:].rjust(3, "0"))
 
-# Write key
-keyFile.close()
+    # Write key
+    keyFile.close()

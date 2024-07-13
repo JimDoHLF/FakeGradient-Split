@@ -17,7 +17,7 @@ from Autograd import zero_gradients
 import KeyDecrypt as kd
 
 
-def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
+def deepfoolD(image, net1, net2, net3, num_classes=10, overshoot=0.02, max_iter=50):
 
     """
        :param image: Image of size HxWx3
@@ -33,7 +33,9 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
     if is_cuda:
         print("Using GPU")
         image = image.cuda()
-        basenet = basenet.cuda()
+        net1 = net1.cuda()
+        net2 = net2.cuda()
+        net3 = net3.cuda()
     else:
         print("Using CPU")
 
@@ -41,19 +43,34 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
     f_image = torch.cat((f_image1, f_image2, f_image3),1)
     """
 
-    f_image = basenet.forward(Variable(image[None, :, :, :], requires_grad=True)).data.cpu()
+    x = Variable(image[None, :, :, :], requires_grad=True)
 
-    # Decrypt output
-    f_image = kd.decryptKey(f_image)
+    f_image1 = net1.forward(x).data.cpu()
+    f_image2 = net2.forward(x).data.cpu()
+    f_image3 = net3.forward(x).data.cpu()
 
-    print(f_image[0][0])
-
-    I = (f_image).numpy().flatten().argsort()[::-1]
+    I = f_image1.numpy().flatten().argsort()[::-1]
 
     I = I[0:num_classes]
     label = I[0]
     
+    f_image = torch.concat((f_image1, f_image2, f_image3), dim=1)
+    """
+    print(f_image1[0][0])
+    print(f_image[0][0])
+    print(f_image2[0][0])
+    print(f_image[0][1000])
+    print(f_image3[0][0])
+    print(f_image[0][2000])
+    """
+    # Decrypt output
+    f_image = kd.decryptKey(f_image)    
+
+    #print(f_image1.shape)
+    #print(f_image.shape)
+
     B= (f_image).numpy().flatten()[0:1000].argsort()[::-1]
+
     Originallabel = B[0]
 
     # Find pertubation, but we need a combined model to test
@@ -66,7 +83,8 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
     loop_i = 0
 
     x = Variable(pert_image[None, :], requires_grad=True)
-    fsn = basenet.forward(x)
+    
+    fsn1 = net1.forward(x)
     #fs_list = [fs[0,I[k]] for k in range(num_classes)]
     k_i = label
     CountFlag=0
@@ -74,7 +92,7 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
 
         pert = np.inf
 
-        fsn[0, I[0]].backward(retain_graph=True)
+        fsn1[0, I[0]].backward(retain_graph=True)
         grad_orig = x.grad.data.cpu().numpy().copy()
         if CountFlag==0:
             TheGradient=x.grad.data.cpu().numpy().copy()
@@ -83,12 +101,12 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
         for k in range(1, num_classes):
             zero_gradients(x)
 
-            fsn[0, I[k]].backward(retain_graph=True)
+            fsn1[0, I[k]].backward(retain_graph=True)
             cur_grad = x.grad.data.cpu().numpy().copy()
 
             # set new w_k and new f_k
             w_k = cur_grad - grad_orig
-            f_k = (fsn[0, I[k]] - fsn[0, I[0]]).data.cpu().numpy()
+            f_k = (fsn1[0, I[k]] - fsn1[0, I[0]]).data.cpu().numpy()
 
             pert_k = abs(f_k)/np.linalg.norm(w_k.flatten())
 
@@ -110,8 +128,8 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
             pert_image = image + (1+overshoot)*torch.from_numpy(r_tot)
         
         x = Variable(pert_image, requires_grad=True)
-        fsn = basenet.forward(x)
-        k_i = np.argmax(fsn.data.cpu().numpy().flatten())
+        fsn1 = net1.forward(x)
+        k_i = np.argmax(fsn1.data.cpu().numpy().flatten())
 
         loop_i += 1
 
@@ -120,9 +138,13 @@ def deepfoolC(image, basenet, num_classes=10, overshoot=0.02, max_iter=50):
 
     x = Variable(pert_image, requires_grad=True)
         
-    fsn = basenet.forward(x)
-    fsn = fsn.data.cpu()
-    k_i = np.argmax(fsn.numpy().flatten())
+    fsn1 = net1.forward(x).data.cpu()
+    fsn2 = net2.forward(x).data.cpu()
+    fsn3 = net3.forward(x).data.cpu()
+
+    k_i = np.argmax(fsn1.data.cpu().numpy().flatten())
+
+    fsn = torch.concat((fsn1, fsn2, fsn3), dim=1)
     fsn = kd.decryptKey(fsn)
     Protected = np.argmax(fsn.numpy().flatten()[0:1000])
 

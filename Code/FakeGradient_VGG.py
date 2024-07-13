@@ -6,8 +6,10 @@ from PIL import Image
 from imageio.v2 import imread
 
 from ModifyModel import ModifyModelVGGScale
+from ModifyModel import SplitModelVGG
 from DeepFoolB import deepfoolB
 from DeepFoolC import deepfoolC
+from DeepFoolD import deepfoolD
 
 import csv
 import cv2
@@ -20,8 +22,15 @@ net.eval()
 fgnet_base = models.vgg19(weights='IMAGENET1K_V1')
 fgnet_base = ModifyModelVGGScale(fgnet_base, Scale).cuda()
 
-fgnet_base.eval()
+fgnet1 = models.vgg19(weights='IMAGENET1K_V1')
+fgnet2 = models.vgg19(weights='IMAGENET1K_V1')
+fgnet3 = models.vgg19(weights='IMAGENET1K_V1')
+fgnet1, fgnet2, fgnet3 = SplitModelVGG(fgnet_base, fgnet1, fgnet2, fgnet3)
 
+fgnet_base.eval()
+fgnet1.eval()
+fgnet2.eval()
+fgnet3.eval()
 
 #
 AT="DeepFool"
@@ -41,7 +50,7 @@ Folder='C:/Users/longd/Documents/ImageNet/ILSVRC/Data/DET/test/'
 FileName='ILSVRC2016_test'
 Append='.JPEG'            #00099990
 Error=[]
-for i in range(1,10): # Number of tries
+for i in range(1,100): # Number of tries
     Index=str(i+1)
     K=len(Index)
     IndexFull='_'
@@ -92,7 +101,8 @@ for i in range(1,10): # Number of tries
     I = (np.array(f_image)).flatten().argsort()[::-1]
     Originallabel = I[0]
     '''
-    r, loop_i, label_orig, label_pert, Originallabel,Protected,pert_image,TheGradient = deepfoolC(im, fgnet_base)
+    #r, loop_i, label_orig, label_pert, Originallabel,Protected,pert_image,TheGradient = deepfoolC(im, fgnet_base)
+    r, loop_i, label_orig, label_pert, Originallabel,Protected,pert_image,TheGradient = deepfoolD(im, fgnet1, fgnet2, fgnet3)
     rB, loop_iB, label_origB, label_pertB, pert_imageB,TheGradientB = deepfoolB(imB, net)
     print("original:    ", Originallabel)
     print("original:    ", Protected)
@@ -101,7 +111,7 @@ for i in range(1,10): # Number of tries
     print(" Attack Result In Fake:  ", label_pert, "   Original Label in Attack With Fake: ", Originallabel,"   Protected By Fake: ",Protected )
     Acc=0
     AccB=0
-    if label_pertB!=label_origB:
+    if label_pert!=Protected:
         print("DeepFool Works!")
         CountDF_EFF=CountDF_EFF+1
         if label_origB==Protected:
