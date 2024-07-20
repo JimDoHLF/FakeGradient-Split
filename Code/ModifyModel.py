@@ -63,7 +63,7 @@ def ModifyModelVGGScale(basenet, Scale):
         noise = rd.sample(range(0,(OutL - r) * 2), OutL - r)
         rd.shuffle(noise)
         for i in range(OutL - r):
-            dnoise = noise[i] / 27000
+            dnoise = noise[i] / 27500
             n = i % r
             for j in range(c):
                 TMP = WSave[n][j].copy()
