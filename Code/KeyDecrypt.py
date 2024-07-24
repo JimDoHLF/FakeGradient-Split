@@ -4,6 +4,17 @@ from KeyGenerator import GenerateKey
 
 FOOLGRAD = 3000
 
+def getNoise():
+    noiseFile = open("noise.txt", "r")
+    noiseStr = noiseFile.read()
+    noise = np.ndarray(shape=(FOOLGRAD-1000,1), dtype=np.float32)
+    for i in range (FOOLGRAD-1000):
+        # Convert from hex to number
+        temp = int(noiseStr[i * 3 : i * 3 + 3], 16)
+        noise[i][0] = temp / 27500 # Modulate noise intensity
+    return torch.from_numpy(noise)
+
+
 def getKey32():
     keyFile = open("key.txt", "r")
     keyStr = keyFile.read()

@@ -50,7 +50,7 @@ Folder='C:/Users/longd/Documents/ImageNet/ILSVRC/Data/DET/test/'
 FileName='ILSVRC2016_test'
 Append='.JPEG'            #00099990
 Error=[]
-for i in range(1,1000): # Number of tries
+for i in range(1,100): # Number of tries
     Index=str(i+1)
     K=len(Index)
     IndexFull='_'

@@ -60,10 +60,9 @@ def ModifyModelVGGScale(basenet, Scale):
 
     print("=====3--------------")
     with torch.no_grad():
-        noise = rd.sample(range(0,(OutL - r) * 2), OutL - r)
-        rd.shuffle(noise)
+        noise = kd.getNoise()
         for i in range(OutL - r):
-            dnoise = noise[i] / 27500
+            dnoise = noise[i][0]
             n = i % r
             for j in range(c):
                 TMP = WSave[n][j].copy()
