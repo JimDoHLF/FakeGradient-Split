@@ -16,7 +16,7 @@ import cv2
 
 import KeyGenerator as kg
 
-def runmodel():
+def runmodel(runtime):
     Scale = 20
 
     net = models.vgg19(weights='IMAGENET1K_V1').cuda()
@@ -53,7 +53,7 @@ def runmodel():
     FileName='ILSVRC2016_test'
     Append='.JPEG'            #00099990
     Error=[]
-    for i in range(1,100): # Number of tries
+    for i in range(1,runtime): # Number of tries
         Index=str(i+1)
         K=len(Index)
         IndexFull='_'
@@ -138,10 +138,10 @@ def runmodel():
 bestResult = 0
 bestNoiseFile = open("bestnoise.txt", "w")
 currentNoiseFile = open("noise.txt", "r")
-for r in range (5):
+for r in range (10):
     print("Pass: ", r)
     kg.GenerateNoise(3000)
-    newResult = runmodel()
+    newResult = runmodel(100)
     if (newResult > bestResult):
         bestNoiseFile.write(currentNoiseFile.read())
         bestResult = newResult
